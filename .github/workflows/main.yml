@@ -1,0 +1,40 @@
+name: Test scan
+
+on:
+  push:
+    branches: [ main, master, develop, stage, release ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Download Dalamud
+        run: |
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile latest.zip
+          Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
+      - name: Polaris Scan
+        env: 
+          POLARIS_SERVER_URL: ${{ vars.POLARIS_SERVER_URL }}
+          POLARIS_ACCESS_TOKEN: ${{ secrets.POLARIS_ACCESS_TOKEN }}          
+        run: |
+          $ver = '${{ github.ref_name }}'
+          Invoke-WebRequest -Uri ${{ vars.POLARIS_SERVER_URL }}/api/tools/polaris_cli-win64.zip -OutFile polaris.zip
+          Expand-Archive -Path polaris.zip -DestinationPath ${{ runner.temp }} -Force
+          Remove-Item -Path polaris.zip -Force
+          ${{ runner.temp }}/*/bin/polaris.exe --co project.name=chuckaude-${{ github.event.repository.name }} analyze -w
+      - name: Save Logs
+        if: always()
+        uses: actions/upload-artifact$v3
+        with:
+          name: polaris-cli-logs
+          path: ${{ github.workspace }}/.synopsys
