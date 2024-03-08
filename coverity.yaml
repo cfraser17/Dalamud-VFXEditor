@@ -1,4 +1,4 @@
 capture:
   build:
     clean-command: dotnet clean
-    build-command: dotnet build --no-restore --configuration Beta --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver
+    build-command: dotnet build --no-restore --configuration Beta --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver -p:UseSharedCompilation=false
